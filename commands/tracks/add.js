@@ -1,7 +1,9 @@
 /* eslint-disable max-len */
 /* eslint-disable no-console */
-const { AttachmentBuilder, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
-const { DiscogsClient } = require('@lionralfs/discogs-client/commonjs');
+const {
+  ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder,
+} = require('discord.js');
+// const { DiscogsClient } = require('@lionralfs/discogs-client/commonjs');
 const Spotify = require('spotify-api.js');
 
 module.exports = {
@@ -25,22 +27,57 @@ module.exports = {
         clientSecret: process.env.SPOTIFY_SECRET,
       },
     });
-    // console.log('client', client);
 
     const { tracks } = await client.search(input, { types: ['track', 'album'] });
-    console.log('tracks', tracks[0].album.images);
+    console.log('tracks', tracks[0]);
+
+    const display = `${tracks[0].artists[0].name} - ${tracks[0].name}`;
+    console.log('display', display);
 
     const embed = new EmbedBuilder()
-      .setTitle(`${tracks[0].artists[0].name} - ${tracks[0].name}`);
+      // .setFooter({
+      //   text: 'this is the footer',
+      // })
+      // .setImage('https://i.imgur.com/AfFp7pu.png')
+      .setThumbnail(tracks[0].album.images[0].url)
+      // .setTimestamp()
+      .setTitle(display)
+      .setURL(tracks[0].externalURL.spotify);
+      // .setAuthor({
+      //   name: 'Some name',
+      //   iconURL: 'https://i.imgur.com/AfFp7pu.png',
+      //   url: 'https://discord.js.org',
+      // })
+      // .setDescription('Some description here')
+      // .addFields(
+      //   {
+      //     name: 'Regular field title 1',
+      //     value: tracks[0].externalURL.spotify,
+      //   },
+      // );
 
-    const thumb = new AttachmentBuilder(tracks[0].album.images[0].url, {
-      name: 'album.jpg',
-    });
+    const confirm = new ButtonBuilder()
+      .setCustomId('confirm')
+      .setLabel('Add track')
+      .setStyle(ButtonStyle.Primary);
 
-    return interaction.reply({
-      embeds: [embed],
-      files: [thumb],
-    });
+    const cancel = new ButtonBuilder()
+      .setCustomId('cancel')
+      .setLabel('Cancel')
+      .setStyle(ButtonStyle.Secondary);
+
+    const action = new ActionRowBuilder()
+      .addComponents(cancel, confirm);
+
+    const response = await interaction.reply(
+      {
+        content: tracks[0].externalURL.spotify,
+        components: [action],
+        // embeds: [embed],
+      },
+    );
+
+    console.log('response', response);
 
     // const db = new DiscogsClient({
     //   auth: { userToken: process.env.DISCOGS_TOKEN },
