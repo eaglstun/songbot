@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 const { AttachmentBuilder, EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const { DiscogsClient } = require('@lionralfs/discogs-client/commonjs');
+const Spotify = require('spotify-api.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,35 +19,48 @@ module.exports = {
     const input = interaction.options.getString('input');
     console.log('input', input);
 
-    const db = new DiscogsClient({
-      auth: { userToken: process.env.DISCOGS_TOKEN },
-    }).database();
-
-    db.search({
-      query: input,
-      // type: 'release'
-    }).then(
-      ({ data }) => {
-        console.log(data);
-
-        if (data.results.length) {
-          const attachment = new AttachmentBuilder(data.results[0].cover_image, {
-
-          });
-
-          const thumb = new EmbedBuilder()
-            .setTitle(data.results[0].title);
-
-          return interaction.reply({
-            embeds: [thumb],
-            files: [attachment],
-          });
-        }
-
-        return interaction.reply('not found');
+    const client = new Spotify.Client({
+      token: {
+        clientID: process.env.SPOTIFY_ID,
+        clientSecret: process.env.SPOTIFY_SECRET,
       },
-    ).catch(
-      (e) => interaction.reply(`Error: ${e}`),
-    );
+    });
+    // console.log('client', client);
+
+    const { tracks } = await client.search(input, { types: ['track', 'album'] });
+    console.log('tracks', tracks[0].album.images);
+
+    const embed = new EmbedBuilder()
+      .setTitle(`${tracks[0].artists[0].name} - ${tracks[0].name}`);
+
+    const thumb = new AttachmentBuilder(tracks[0].album.images[0].url, {
+      name: 'album.jpg',
+    });
+
+    return interaction.reply({
+      embeds: [embed],
+      files: [thumb],
+    });
+
+    // const db = new DiscogsClient({
+    //   auth: { userToken: process.env.DISCOGS_TOKEN },
+    // }).database();
+
+    // db.search({
+    //   query: input,
+    //   // type: 'release'
+    // }).then(
+    //   ({ data }) => {
+    //     console.log(data);
+
+    //     if (data.results.length) {
+
+    //     }
+
+    //     return interaction.reply('not found');
+    //   },
+    // ).catch(
+    //   (e) => interaction.reply(`Error: ${e}`),
+    // );
   },
 };
